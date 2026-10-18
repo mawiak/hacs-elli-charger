@@ -3,10 +3,13 @@
   "name": "Elli Charger",
   "codeowners": ["@marcszy91"],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": ["http", "frontend"],
+  "after_dependencies": ["recorder"],
   "documentation": "https://github.com/marcszy91/hacs-elli-charger",
+  "integration_type": "hub",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/marcszy91/hacs-elli-charger/issues",
-  "requirements": ["elli-client==1.0.3"],
+  "loggers": ["elli_client"],
+  "requirements": ["elli-client>=1.5.0,<2.0.0", "reportlab>=4.0.0"],
   "version": "1.0.0"
 }

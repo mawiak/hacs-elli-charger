@@ -1,0 +1,99 @@
+send_monthly_report:
+  name: Send monthly report
+  description: >-
+    Builds a PDF summarising the kWh charged per RFID card/authentication
+    method for a given month, and optionally emails it via an existing
+    notify service.
+  fields:
+    month:
+      name: Month
+      description: "Month to report on, as YYYY-MM. Defaults to last month."
+      example: "2026-08"
+      selector:
+        text:
+    notify_service:
+      name: Notify service
+      description: >-
+        The notify service to send the PDF through, e.g. notify.smtp_family.
+        Leave empty to only generate the PDF without sending it.
+      example: "notify.notify"
+      default: "notify.notify"
+      selector:
+        text:
+    target:
+      name: Target
+      description: Optional recipient/target forwarded to the notify service.
+      example: "you@example.com"
+      selector:
+        text:
+    config_entry_id:
+      name: Elli account
+      description: >-
+        Restrict the report to one Elli account, if more than one is
+        configured. Leave empty to include all accounts.
+      selector:
+        config_entry:
+          integration: elli_charger
+
+set_payment:
+  name: Set payment date
+  description: >-
+    Records the date on which the charging costs of one month and RFID card
+    were paid. Leave the date empty to remove it again.
+  fields:
+    month:
+      name: Month
+      required: true
+      example: "2026-09"
+      selector:
+        text:
+    card:
+      name: Card
+      description: Card label as shown in the history, e.g. "RFID 04A1B2C3".
+      required: true
+      example: "RFID 04A1B2C3"
+      selector:
+        text:
+    paid_on:
+      name: Paid on
+      selector:
+        date:
+
+create_billing_report:
+  name: Create billing report
+  description: >-
+    Creates a PDF with the monthly kWh, amount and payment date per RFID
+    card for one year. Returns the URL of the PDF (only for logged-in users).
+  fields:
+    year:
+      name: Year
+      description: Defaults to the current year.
+      example: 2026
+      selector:
+        number:
+          min: 2000
+          max: 2100
+          mode: box
+    price_per_kwh:
+      name: Price per kWh
+      example: 0.38
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 0.0001
+          mode: box
+    currency:
+      name: Currency
+      default: "€"
+      selector:
+        text:
+    card_names:
+      name: Card names
+      description: 'Map of card labels to tenant names, e.g. {"RFID 04A1B2C3": "Basti"}.'
+      selector:
+        object:
+    title:
+      name: Title
+      selector:
+        text:

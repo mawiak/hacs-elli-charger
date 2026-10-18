@@ -2,21 +2,136 @@
   "config": {
     "step": {
       "user": {
-        "title": "Elli Ladestation Einrichtung",
-        "description": "Geben Sie Ihre Elli-Zugangsdaten ein",
+        "title": "Elli-Konto verbinden",
+        "description": "Der Elli-Login erfordert eine Sicherheitsabfrage, die nur in einem echten Browser funktioniert. Du meldest dich dort an, Home Assistant übernimmt das Ergebnis.\n\n**Automatisch** braucht den kleinen Windows-Login-Helfer auf dem PC, an dem du dich anmeldest (einmalig): [Helfer herunterladen]({helper_url}), dann Rechtsklick → *Mit PowerShell ausführen*.\n\n**Manuell** funktioniert auf jedem Gerät: Du kopierst den Link `com.elli.ios.emsp://…` aus dem Browser und fügst ihn hier ein.",
+        "menu_options": {
+          "login_auto": "Automatisch anmelden (Windows-Login-Helfer)",
+          "login_manual": "Anmelden und Link manuell einfügen"
+        }
+      },
+      "login_auto": {
+        "title": "Bei Elli anmelden",
+        "description": "Ein neuer Browser-Tab mit dem Elli-Login öffnet sich. Melde dich an und löse die Sicherheitsabfrage.\n\nWenn der Browser fragt, ob der Link mit *Windows PowerShell* geöffnet werden soll, zulassen. Home Assistant schließt die Einrichtung dann automatisch ab.\n\nPassiert nichts? Prüfe, ob der [Login-Helfer]({helper_url}) auf diesem PC installiert ist, oder schließe den Dialog und wähle die manuelle Anmeldung."
+      },
+      "login_manual": {
+        "title": "Bei Elli anmelden (manuell)",
+        "description": "1. Diesen Link öffnen und anmelden: [Bei Elli anmelden]({authorize_url})\n2. Der Browser versucht danach, einen Link zu öffnen, der mit `com.elli.ios.emsp://…` beginnt, und scheitert (das ist normal). Diesen **kompletten** Link kopieren – z. B. F12 → *Netzwerk*, *Log beibehalten* anhaken, anmelden, nach `emsp` filtern und den *Location*-Header kopieren.\n3. Unten einfügen.",
         "data": {
-          "email": "E-Mail",
-          "password": "Passwort"
+          "callback_url": "Eingefügte Callback-URL"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Elli Charger erneut anmelden",
+        "description": "Die Verbindung von Home Assistant zu Elli muss erneuert werden. Wähle, wie du dich erneut anmelden möchtest.\n\nDie automatische Anmeldung braucht den [Windows-Login-Helfer]({helper_url}) auf dem PC, an dem du dich anmeldest.",
+        "menu_options": {
+          "login_auto": "Automatisch anmelden (Windows-Login-Helfer)",
+          "login_manual": "Anmelden und Link manuell einfügen"
         }
       }
     },
     "error": {
       "cannot_connect": "Verbindung zur Elli API fehlgeschlagen",
-      "invalid_auth": "Ungültige E-Mail oder Passwort",
+      "invalid_callback": "Das sieht nicht nach einem gültigen Elli-Login-Callback-Link aus, oder er ist abgelaufen. Bitte erneut anmelden und den kompletten Link verwenden.",
       "unknown": "Ein unerwarteter Fehler ist aufgetreten"
     },
     "abort": {
-      "already_configured": "Dieses Elli-Konto ist bereits konfiguriert"
+      "already_configured": "Dieses Elli-Konto ist bereits konfiguriert",
+      "reauth_successful": "Erneute Anmeldung war erfolgreich"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Elli Charger Optionen",
+        "description": "Legen Sie fest, wie oft Home Assistant die Elli API abfragt und optional, welcher PV-Energiesensor für die Schätzung des Solaranteils je Ladung verwendet wird.",
+        "data": {
+          "scan_interval": "Abfrageintervall (Minuten)",
+          "solar_entity": "PV-Erzeugung (Energiesensor, optional)"
+        },
+        "data_description": {
+          "solar_entity": "Energiesensor deiner PV-Anlage, der die erzeugte Energie zählt (kWh, z. B. der Solarertrag deines Wechselrichters oder der Anker Solix). Seine stündliche Statistik wird mit jeder Ladung abgeglichen. Das Ergebnis ist eine Obergrenze: Es wird angenommen, dass der PV-Strom während einer Ladung komplett ins Auto ging."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "wallbox_status": {
+        "name": "Status",
+        "state": {
+          "idle": "Bereit",
+          "connected": "Verbunden",
+          "charging": "Lädt"
+        }
+      }
+    }
+  },
+  "services": {
+    "send_monthly_report": {
+      "name": "Monatsbericht senden",
+      "description": "Erstellt ein PDF mit den geladenen kWh je Ladekarte/Authentifizierungsmethode für einen Monat und verschickt es optional über einen vorhandenen Notify-Dienst.",
+      "fields": {
+        "month": {
+          "name": "Monat",
+          "description": "Zu berichtender Monat im Format JJJJ-MM. Standard: letzter Monat."
+        },
+        "notify_service": {
+          "name": "Notify-Dienst",
+          "description": "Notify-Dienst, über den das PDF verschickt wird, z. B. notify.smtp_family. Leer lassen, um das PDF nur zu erstellen, ohne es zu senden."
+        },
+        "target": {
+          "name": "Ziel",
+          "description": "Optionaler Empfänger, der an den Notify-Dienst weitergegeben wird."
+        },
+        "config_entry_id": {
+          "name": "Elli-Konto",
+          "description": "Bericht auf ein Elli-Konto beschränken, falls mehrere konfiguriert sind."
+        }
+      }
+    },
+    "set_payment": {
+      "name": "Zahlungsdatum setzen",
+      "description": "Speichert, wann die Ladekosten eines Monats für eine Ladekarte bezahlt wurden. Leeres Datum entfernt den Eintrag.",
+      "fields": {
+        "month": {
+          "name": "Monat",
+          "description": "Monat im Format JJJJ-MM."
+        },
+        "card": {
+          "name": "Karte",
+          "description": "Kartenbezeichnung wie in der Historie, z. B. \"RFID 04A1B2C3\"."
+        },
+        "paid_on": {
+          "name": "Bezahlt am",
+          "description": "Zahlungsdatum. Leer = Eintrag löschen."
+        }
+      }
+    },
+    "create_billing_report": {
+      "name": "Abrechnung als PDF erstellen",
+      "description": "Erstellt ein PDF mit Verbrauch, Betrag und Zahlungsdatum je Monat und Ladekarte für ein Jahr.",
+      "fields": {
+        "year": {
+          "name": "Jahr",
+          "description": "Standard: aktuelles Jahr."
+        },
+        "price_per_kwh": {
+          "name": "Preis pro kWh",
+          "description": "Preis für die Beträge."
+        },
+        "currency": {
+          "name": "Währung",
+          "description": "Währungssymbol."
+        },
+        "card_names": {
+          "name": "Kartennamen",
+          "description": "Zuordnung Kartenbezeichnung → Mieter."
+        },
+        "title": {
+          "name": "Titel",
+          "description": "Optionaler Titel des Berichts."
+        }
+      }
     }
   }
 }

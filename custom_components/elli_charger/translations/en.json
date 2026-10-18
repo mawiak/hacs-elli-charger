@@ -2,21 +2,136 @@
   "config": {
     "step": {
       "user": {
-        "title": "Elli Charger Setup",
-        "description": "Enter your Elli account credentials",
+        "title": "Connect your Elli account",
+        "description": "Elli's login requires a security check that only works in a real browser, so you log in there and Home Assistant receives the result.\n\n**Automatic** needs the small Windows login helper on the PC you log in from (one-time setup): [download helper]({helper_url}), then right-click it → *Run with PowerShell*.\n\n**Manual** works on any device: you copy the resulting `com.elli.ios.emsp://…` link from the browser and paste it here.",
+        "menu_options": {
+          "login_auto": "Log in automatically (Windows login helper)",
+          "login_manual": "Log in and paste the link manually"
+        }
+      },
+      "login_auto": {
+        "title": "Log in to Elli",
+        "description": "A new browser tab with the Elli login opens. Log in and complete the security check.\n\nWhen the browser asks whether to open the link with *Windows PowerShell*, allow it. Home Assistant then finishes the setup automatically.\n\nNothing happens? Make sure the [login helper]({helper_url}) is installed on this PC, or close this dialog and choose the manual login."
+      },
+      "login_manual": {
+        "title": "Log in to Elli (manual)",
+        "description": "1. Open this link and log in: [Log in to Elli]({authorize_url})\n2. Your browser will then try to open a link starting with `com.elli.ios.emsp://…` and fail (that's expected). Copy that **complete** link – e.g. press F12 → *Network*, tick *Preserve log*, log in, filter for `emsp` and copy the *Location* header.\n3. Paste it below.",
         "data": {
-          "email": "Email",
-          "password": "Password"
+          "callback_url": "Pasted callback URL"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Elli Charger",
+        "description": "Home Assistant's connection to Elli needs to be renewed. Choose how you want to log in again.\n\nAutomatic login needs the [Windows login helper]({helper_url}) on the PC you log in from.",
+        "menu_options": {
+          "login_auto": "Log in automatically (Windows login helper)",
+          "login_manual": "Log in and paste the link manually"
         }
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to Elli API",
-      "invalid_auth": "Invalid email or password",
+      "cannot_connect": "Failed to reach the Elli API",
+      "invalid_callback": "That doesn't look like a valid Elli login callback link, or it has expired. Please log in again and use the complete link.",
       "unknown": "Unexpected error occurred"
     },
     "abort": {
-      "already_configured": "This Elli account is already configured"
+      "already_configured": "This Elli account is already configured",
+      "reauth_successful": "Re-authentication was successful"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Elli Charger options",
+        "description": "Configure how often Home Assistant polls the Elli API and, optionally, which PV energy sensor is used to estimate the solar share of each charge.",
+        "data": {
+          "scan_interval": "Polling interval (minutes)",
+          "solar_entity": "PV production (energy sensor, optional)"
+        },
+        "data_description": {
+          "solar_entity": "Energy sensor of your PV system that counts produced energy (kWh, e.g. the solar yield sensor of your inverter or Anker Solix). Its hourly statistics are matched against each charge. The result is an upper-bound estimate: it assumes all PV energy during a charge went into the car."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "wallbox_status": {
+        "name": "Status",
+        "state": {
+          "idle": "Idle",
+          "connected": "Connected",
+          "charging": "Charging"
+        }
+      }
+    }
+  },
+  "services": {
+    "send_monthly_report": {
+      "name": "Send monthly report",
+      "description": "Builds a PDF summarising the kWh charged per RFID card/authentication method for a given month, and optionally emails it via an existing notify service.",
+      "fields": {
+        "month": {
+          "name": "Month",
+          "description": "Month to report on, as YYYY-MM. Defaults to last month."
+        },
+        "notify_service": {
+          "name": "Notify service",
+          "description": "The notify service to send the PDF through, e.g. notify.smtp_family. Leave empty to only generate the PDF without sending it."
+        },
+        "target": {
+          "name": "Target",
+          "description": "Optional recipient/target forwarded to the notify service."
+        },
+        "config_entry_id": {
+          "name": "Elli account",
+          "description": "Restrict the report to one Elli account, if more than one is configured."
+        }
+      }
+    },
+    "set_payment": {
+      "name": "Set payment date",
+      "description": "Records the date on which the charging costs of one month and RFID card were paid. Leave the date empty to remove it again.",
+      "fields": {
+        "month": {
+          "name": "Month",
+          "description": "Month as YYYY-MM."
+        },
+        "card": {
+          "name": "Card",
+          "description": "Card label as shown in the history, e.g. \"RFID 04A1B2C3\"."
+        },
+        "paid_on": {
+          "name": "Paid on",
+          "description": "Payment date. Empty removes it."
+        }
+      }
+    },
+    "create_billing_report": {
+      "name": "Create billing report",
+      "description": "Creates a PDF with the monthly kWh, amount and payment date per RFID card for one year.",
+      "fields": {
+        "year": {
+          "name": "Year",
+          "description": "Defaults to the current year."
+        },
+        "price_per_kwh": {
+          "name": "Price per kWh",
+          "description": "Price used for the amounts."
+        },
+        "currency": {
+          "name": "Currency",
+          "description": "Currency symbol."
+        },
+        "card_names": {
+          "name": "Card names",
+          "description": "Map of card labels to tenant names."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Optional report title."
+        }
+      }
     }
   }
 }
